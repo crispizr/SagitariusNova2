@@ -1,1 +1,116 @@
-# Site de reseignement des valeurs
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Moniteur ESP32</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f9f9f9;
+      color: #333;
+      text-align: center;
+      padding: 20px;
+    }
+    h1 {
+      font-size: 2em;
+      margin-bottom: 10px;
+    }
+    table {
+      margin: 20px auto;
+      border-collapse: collapse;
+      width: 90%;
+      max-width: 800px;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 10px;
+    }
+    th {
+      background-color: #007BFF;
+      color: white;
+    }
+    canvas {
+      max-width: 700px;
+      margin: 30px auto;
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <h1>Données ESP34 depuis Google Sheets</h1>
+  <table id="dataTable">
+    <thead>
+      <tr>
+        <th>Horodatage</th>
+        <th>Température (°C)</th>
+        <th>Humidité (%)</th>
+        <th>MQ (%)</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <canvas id="tempChart"></canvas>
+  <canvas id="humChart"></canvas>
+
+  <script>
+    const sheetID = '12x5LRuFBaKeAfkSxc53uR-6Q3Xcu-OxZt2plY0GZSko';
+    const sheetName = 'Sagitarius-Nova';
+    const apiKey = 'AIzaSyDli_MymEVX-eThRcjYAMnjeqtNmb93G9M';
+
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetID}/values/${sheetName}?key=${apiKey}`;
+
+    fetch(url)
+      .then(response => response.json())
+      .then(data => {
+        const rows = data.values.slice(1); // Ignorer l'en-tête
+        const tableBody = document.querySelector("#dataTable tbody");
+        const labels = [];
+        const tempData = [];
+        const humData = [];
+
+        rows.forEach(row => {
+          const [timestamp, temp, hum, mq] = row;
+          const tr = document.createElement("tr");
+          tr.innerHTML = `<td>${timestamp}</td><td>${temp}</td><td>${hum}</td><td>${mq}</td>`;
+          tableBody.appendChild(tr);
+
+          labels.push(timestamp);
+          tempData.push(parseFloat(temp));
+          humData.push(parseFloat(hum));
+        });
+
+        new Chart(document.getElementById('tempChart'), {
+          type: 'line',
+          data: {
+            labels: labels,
+            datasets: [{
+              label: 'Température (°C)',
+              data: tempData,
+              borderColor: 'red',
+              backgroundColor: 'rgba(255,0,0,0.1)',
+              fill: true
+            }]
+          }
+        });
+
+        new Chart(document.getElementById('humChart'), {
+          type: 'line',
+          data: {
+            labels: labels,
+            datasets: [{
+              label: 'Humidité (%)',
+              data: humData,
+              borderColor: 'blue',
+              backgroundColor: 'rgba(0,0,255,0.1)',
+              fill: true
+            }]
+          }
+        });
+      })
+      .catch(error => console.error('Erreur de lecture Google Sheets:', error));
+  </script>
+</body>
+</html>
